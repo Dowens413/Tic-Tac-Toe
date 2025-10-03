@@ -50,7 +50,7 @@ To run this project locally, you will need Node.js and a local MySQL instance.
 
 Clone the repository:
 
-git clone [YOUR_REPO_URL]
+git clone 
 cd tic-tac-toe-multiplayer
 
 Install dependencies:
