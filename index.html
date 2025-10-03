@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<meta name="author" content="DuJuan Owens">
+	<meta name="description" content="Tic Tac Toe">
+	<title>Welcome to Tic Tac Toe</title>
+	<link rel="stylesheet" href="styles.css">
+
+</head>
+
+<body>
+	<div id="header">
+		<h1>
+			Tic Tac-toe game
+		</h1>
+		<h4>by DuJuan Owens</h4>
+	</div>
+	<hr>
+
+	<h4 id="helpBox">How to Play</h4>
+
+	<hr>
+	<div id="login-phase">
+		<form id="login-form" onsubmit="return false;">
+			<label for="screenName">Screen Name:</label>
+			<input id="screen-input" name="screenName" type="text" placeholder="screen name">
+
+			<button name="loginBtn" type="submit">Submit</button>
+			<input type="hidden" name="action" value="login" />
+			<div id="loginError" style="color:red; margin-top: 10px;"></div>
+		</form>
+	</div>
+	<div id="popupOverlay" class="popup-overlay"> <!-- the popup div for the overlay  -->
+		<div class="popup-box">
+			<span class="close-btn" onclick="hidePopup()">&times;</span>
+			<div id="popupContent">This is the popup message</div>
+		</div>
+	</div>
+
+	<div class="phase" id="menu-phase">
+		<div class="container">
+			<div class="table-container">
+				<table class="table-status" border="1">
+					<caption>Players</caption>
+					<thead>
+						<tr>
+							<th>X-player</th>
+							<th>O-player</th>
+						</tr>
+					</thead>
+					<tbody id="player-table">
+
+					</tbody>
+				</table>
+			</div>
+			<div class="table-container">
+
+				<table class="table-status" border="1">
+
+					<thead>
+						<tr>
+							<th>Idle Clients</th>
+
+						</tr>
+					</thead>
+					<tbody id="idle-table">
+
+
+				</table>
+			</div>
+		</div>
+
+
+		<div>
+			<button id="newGame">NEW<br> GAME</button>
+		</div>
+	</div>
+
+	<div class="phase" id="game-phase">
+		<table id=game-status>
+			<tr>
+				<th>X:</th>
+				<th>O:</th>
+				<th>Turn:</th>
+			</tr>
+			<tr>
+				<td id="x-label">Snake</td>
+				<td id="o-label">Lion</td>
+				<td id="turn-label">X-Snake</td>
+			</tr>
+		</table>
+
+
+		<table id="tic-tac-toe-board">
+			<tr>
+				<td id="cell-0" data-cell-index="0"></td>
+				<td id="cell-1" data-cell-index="1"></td>
+				<td id="cell-2" data-cell-index="2"></td>
+			</tr>
+			<tr>
+				<td id="cell-3" data-cell-index="3"></td>
+				<td id="cell-4" data-cell-index="4"></td>
+				<td id="cell-5" data-cell-index="5"></td>
+			</tr>
+			<tr>
+				<td id="cell-6" data-cell-index="6"></td>
+				<td id="cell-7" data-cell-index="7"></td>
+				<td id="cell-8" data-cell-index="8"></td>
+			</tr>
+		</table>
+
+
+	</div>
+
+
+
+
+
+	<script src="https://cdn.socket.io/4.7.4/socket.io.min.js"></script>
+
+	<script src="myscripts.js"></script>
+
+
+	<script>
+
+		let yourSymbol = "";
+		let opponentSymbol = "";
+		let yourTurn = false;
+		let screenName = "";
+		let opponentName = "";
+
+
+
+		var connectedSocket = null;
+
+		// Send message to Server. 
+		// Will create a connection if one is not already established
+		function sendToServer(messageType, message) {
+			try {
+				if (!connectedSocket) createSocket();
+				connectedSocket.emit(messageType, message); // send msg to server
+			} catch (err) {
+				alert("System error 987: " + err + " contact us, or try again later");
+			}
+		}
+
+		function createSocket() {
+			try {
+				connectedSocket = io("http://13.58.196.73:8080", { transports: ["websocket"], withCredentials: true });
+			} catch (err) {
+				alert('connectedSocket create error, contact us');
+				connectedSocket = null;
+				return;
+			}
+
+
+			connectedSocket.on("LOGIN-OK", function (message) {
+				connectedSocket.screenName = message.screenName;
+				console.log(connectedSocket);
+				hideLogin();
+				showMenu();
+				connectedSocket.emit("update-idle");
+				connectedSocket.emit("print-players");
+
+
+
+			});
+
+			connectedSocket.on("PLAY", function (message) {
+
+
+
+
+				showGame();// shows the  game table 
+
+
+
+				document.getElementById("x-label").innerText = message.x_player;
+				document.getElementById("o-label").innerText = message.o_player;
+
+				document.getElementById("turn-label").innerText = "X-" + message.x_player;
+				//always goes first
+
+				if (connectedSocket.screenName === message.x_player) {
+					yourSymbol = "X";
+					opponentSymbol = "O";
+					yourTurn = true;
+					opponentName = message.o_player;
+				} else {
+					yourSymbol = "O";
+					opponentSymbol = "X";
+					yourTurn = false;
+					opponentName = message.x_player;
+				}
+
+				document.querySelectorAll("#tic-tac-toe-board td").forEach(td => {
+					td.textContent = "";
+
+				});
+
+
+
+
+
+			});
+
+
+			connectedSocket.on("update-gamelist2", function (rows) {
+
+				if (rows && rows.length > 0) {
+					const tbody = document.getElementById("player-table");
+					tbody.innerHTML = ""; // clear existing rows
+
+					rows.forEach(row => {
+						const tr = document.createElement("tr");
+
+						const xCell = document.createElement("td");
+						const oCell = document.createElement("td");
+
+						// If a player slot is empty, add a Join button
+						if (row.x_player) {
+							xCell.textContent = row.x_player;
+						} else {
+							xCell.innerHTML = `<button class="Join" data-position="x">Join</button>`;
+						}
+
+						if (row.o_player) {
+							oCell.textContent = row.o_player;
+						} else {
+							oCell.innerHTML = `<button class="Join" data-position="o">Join</button>`;
+						}
+
+						tr.appendChild(xCell);
+						tr.appendChild(oCell);
+						tbody.appendChild(tr);
+					});
+				}
+			});
+
+
+			connectedSocket.on("MOVE", ({ cell }) => {
+				const targetCell = document.querySelector(`[data-cell-index="${cell}"]`);
+				if (targetCell && targetCell.textContent === "") {
+					targetCell.textContent = opponentSymbol;
+					yourTurn = true;
+					document.getElementById("turn-label").innerText=yourSymbol+"- " + screenName;
+					
+					
+
+
+					
+
+					// Check for win/draw here
+					const result = checkGameOver();
+					if (result !== null) {
+						// result = 'X', 'O', or 'D'
+						connectedSocket.emit("END-GAME", {
+							winner: result,
+							screenName,
+							opponentName
+							
+						});
+					}
+				}
+			});
+
+
+			connectedSocket.on("END-GAME", ({ winner }) => {
+				let message = winner === "D"
+					? "Game is a draw!"
+					: (winner === yourSymbol ? "You won!" : "You lost!");
+
+				showPopup(message);
+
+				// Disable all empty cells
+				document.querySelectorAll('#tic-tac-toe-board td').forEach(td => {
+					if (td.textContent === "") td.style.pointerEvents = "none";
+				});
+
+				// Re-enable new game button
+				document.getElementById("newGame").disabled = false;
+			});
+
+
+			connectedSocket.on("update-gamelist", function (message) {
+
+				let position = message.position.toLowerCase();
+				let tCell = document.getElementById("player-table")
+				const newRow = document.createElement('tr');
+				const playerCell = document.createElement('td');
+				const playerCell2 = document.createElement('td');
+				if (position == "x") {
+					playerCell.textContent = message.screenName;
+					playerCell2.innerHTML = "<button class = 'Join'>Join</button>";
+
+				}
+				else {
+					playerCell.innerHTML = "<button class = 'Join'>Join</button>";
+					playerCell2.textContent = message.screenName;
+
+				}
+				newRow.appendChild(playerCell);
+				newRow.appendChild(playerCell2);
+				tCell.appendChild(newRow);
+				connectedSocket.emit("update-idle");
+
+
+			});
+
+			connectedSocket.on("update-idlelist", function (idleUser) {
+				const tableBody = document.getElementById("idle-table");
+				tableBody.innerHTML = "";
+				idleUser.forEach((user) => {
+					const row = document.createElement("tr");
+					const cell = document.createElement("td");
+					cell.textContent = user.user;
+					row.appendChild(cell);
+					tableBody.appendChild(row);
+
+
+
+				});
+
+			});
+
+
+			// Here's another message type event handler
+			// Come here when messages of type "game-msg" are sent from server to client via the connectedSocket
+			connectedSocket.on("LOGIN-TAKEN", function (message) {
+				loginError("That user name is already  in use");
+			});
+
+			connectedSocket.on("alert", function (message) {
+				alert(message);
+			});
+		}
+
+		// Send the typed message to server, then wipe the typed message
+		function sendMessage() {
+			if ((screenName = document.getElementById("screen-input").value).length == 0) loginError("Can't send empty string");
+			else {
+				sendToServer("TO-SERVER LOGIN screen-name", { 'screenName': screenName });
+				document.getElementById("screen-input").value = "";
+			}
+		}
+
+		// Handle join, exit and other messaging for the private room
+
+		createSocket();
+
+		document.getElementById("login-form").addEventListener("submit", function (e) {     //when submit is pressed and prevent reload of the  page do this ..
+			e.preventDefault();
+			document.getElementById("loginError").innerText = '';
+
+
+
+			sendMessage();
+
+		});
+		document.getElementById("newGame").addEventListener("click", function (e) {     //when submit is pressed and prevent reload of the  page do this ..
+			e.preventDefault();
+			let userInput = "";
+			while (userInput.toLowerCase() != "x" && userInput.toLowerCase() !== "o") {
+				userInput = prompt("Which would you like to be X or O?");
+				if (userInput === null) return; // if cancel is pressed.
+
+			}
+			connectedSocket.emit("new-game", userInput);
+
+
+
+		});
+		document.addEventListener("click", function (e) {
+			if (e.target.classList.contains("Join")) {
+				e.preventDefault();
+
+				const buttonCell = e.target.parentElement;      // <td> containing the button
+				const row = buttonCell.parentElement;           // <tr> row
+				const cells = row.children;
+
+				const index = Array.from(cells).indexOf(buttonCell);
+				const otherCell = cells[1 - index];
+				const playerName = otherCell.textContent.trim();
+
+				console.log("You are joining:", playerName);
+
+				if (playerName !== connectedSocket.screenName) {
+					if (index === 0) {
+						// Clicked Join on the X side, user is joining as O
+						connectedSocket.emit("join", { position: "o", opponent: playerName });
+					} else {
+						// Clicked Join on the O side, user is joining as X
+						connectedSocket.emit("join", { position: "x", opponent: playerName });
+					}
+				} else {
+					showPopup("You can't join a game with yourself");
+				}
+			}
+		});
+
+
+		document.querySelectorAll('#tic-tac-toe-board td').forEach((cell) => {
+			cell.addEventListener("click", function () {
+				const cellNum = parseInt(cell.dataset.cellIndex); // 0–8
+				if (cell.textContent !== "") return; // already taken
+
+				if (yourTurn) {
+					let opponent;
+
+					cell.textContent = yourSymbol; // 'X' or 'O'
+
+					const result = checkGameOver();
+					if (result !== null) {
+					connectedSocket.emit("END-GAME", {
+						winner: result,
+						screenName,
+						opponentName
+							});
+	}
+					if(yourSymbol.toLowerCase()=="x")
+					{
+						 opponent=document.getElementById("o-label").innerText;
+						 document.getElementById("turn-label").innerText="O - " + opponent;
+					}
+						else
+						{
+							opponent = document.getElementById("x-label").innerText;
+							document.getElementById("turn-label").innerText="X - " + opponent;
+						}
+
+					sendToServer("MOVE", {
+						screenName: opponent,
+						cell: cellNum
+					});
+					yourTurn = false; // disable until move comes back
+				} else {
+					showPopup("Not your turn!");
+				}
+			});
+		});
+
+		function checkGameOver() {
+			const cells = Array.from(document.querySelectorAll('#tic-tac-toe-board td')).map(td => td.textContent);
+
+			const winPatterns = [
+				[0, 1, 2], [3, 4, 5], [6, 7, 8], // rows
+				[0, 3, 6], [1, 4, 7], [2, 5, 8], // cols
+				[0, 4, 8], [2, 4, 6]           // diags
+			];
+
+			for (let pattern of winPatterns) {
+				const [a, b, c] = pattern;
+				if (cells[a] && cells[a] === cells[b] && cells[b] === cells[c]) {
+					return cells[a]; // 'X' or 'O'
+				}
+			}
+
+			if (cells.every(cell => cell !== "")) {
+				return 'D'; // Draw
+			}
+
+			return null;
+		}
+
+
+
+
+
+
+
+
+
+
+	</script>
+
+</body>
+
+</html>

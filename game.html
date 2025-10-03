@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<link rel="stylesheet" href="styles.css">
+
+<body>
+    <div id = "header">
+    <h1>
+        Tic-tac-toe game
+    </h1>
+    <h4>
+        by DuJuan Owens
+    </h4>
+</div>
+    <hr>
+    <h4 id = "helpBox">How to Play</h4>
+
+    <div class="container">
+        <div class = "table-container">
+        <table class = "table-status" border="1">
+            <caption>Table 1: Monthly Sales</caption>
+            <thead>
+                <tr>
+                    <th>Month</th>
+                    <th>Sales</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>January</td>
+                    <td>$10,000</td>
+                </tr>
+                <tr>
+                    <td>February</td>
+                    <td>$12,000</td>
+                </tr>
+                <tr>
+                    <td>March</td>
+                    <td>$15,000</td>
+                </tr>
+            </tbody>
+        </table>
+        </div>
+        <div class = "table-container">
+
+        <table class = "table-status" border="1">
+            <caption>Table 2: Quarterly Expenses</caption>
+            <thead>
+                <tr>
+                    <th>Quarter</th>
+                    <th>Expenses</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Q1</td>
+                    <td>$5,000</td>
+                </tr>
+                <tr>
+                    <td>Q2</td>
+                    <td>$6,500</td>
+                </tr>
+                <tr>
+                    <td>Q3</td>
+                    <td>$7,000</td>
+                </tr>
+              
+        </table>
+        </div>
+    </div>
+
+
+    <div>
+        <button id = "newGame">NEW<br> GAME</button>
+    </div>
+
+    <script src="myscripts.js"></script>
+
+    <table id = game-status>
+        <tr>
+            <th>X:</th>
+            <th>O:</th>
+            <th>Turn:</th>
+        </tr>
+        <tr>
+            <td id ="x-label">Snake</td>
+            <td id = "o-label">Lion</td>
+            <td id = "turn-label">X-Snake</td>
+        </tr>
+    </table>
+
+
+    <table id="tic-tac-toe-board">
+        <tr>
+            <td id="cell-0" data-cell-index="0"></td>
+            <td id="cell-1" data-cell-index="1"></td>
+            <td id="cell-2" data-cell-index="2"></td>
+        </tr>
+        <tr>
+            <td id="cell-3" data-cell-index="3"></td>
+            <td id="cell-4" data-cell-index="4"></td>
+            <td id="cell-5" data-cell-index="5"></td>
+        </tr>
+        <tr>
+            <td id="cell-6" data-cell-index="6"></td>
+            <td id="cell-7" data-cell-index="7"></td>
+            <td id="cell-8" data-cell-index="8"></td>
+        </tr>
+    </table>
+    <script>
+
+
+    document.getElementById("newGame").addEventListener("submit", function (e) {     //when submit is pressed and prevent reload of the  page do this ..
+                e.preventDefault();
+
+
+          
+
+    });
+  
+    </script>
+
+
+    
+
+</body>
+</html>
